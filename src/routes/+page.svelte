@@ -19,7 +19,8 @@
 	}
 
 	interface Absence {
-		name: string;
+		vorname: string;
+		nachname: string;
 		entschuldigt: number;
 		unentschuldigt: number;
 	}
@@ -77,13 +78,18 @@
 							.filter((entry) => entry.Name == name && entry.Status == 'unentschuldigt')
 							.map((e) => e.Dauer)
 							.reduce((acc, current) => acc + current, 0);
+						const name_splitted = name.split(' ');
+						const vorname = name_splitted.slice(0, -1).join(' ');
+						const nachname = name_splitted.slice(-1).toString();
 						const absence: Absence = {
-							name,
+							vorname,
+							nachname,
 							entschuldigt,
 							unentschuldigt
 						};
 						entries.push(absence);
 					});
+					handleSortVorname();
 				},
 				error: (error) => {
 					console.log(error.message);
@@ -92,8 +98,12 @@
 		}
 	}
 
-	function handleSortName() {
-		entries.sort((a, b) => a.name.localeCompare(b.name));
+	function handleSortVorname() {
+		entries.sort((a, b) => a.vorname.localeCompare(b.vorname));
+	}
+
+	function handleSortNachname() {
+		entries.sort((a, b) => a.nachname.localeCompare(b.nachname));
 	}
 
 	function handleSortEntschuldigt() {
@@ -109,23 +119,29 @@
 	}
 </script>
 
-<h1>ISABT: IServ Abwesenheitstool</h1>
-<h2>Workflow</h2>
+<h1>ISABT: IServ-Abwesenheitstool</h1>
+<p>Willkommen beim Upload-Tool für die Abwesenheitslisten. Befolgen Sie bitte folgende Schritte:</p>
 <ol>
-	<li>CSV hochladen</li>
-	<li>CSV verarbeiten</li>
-	<li>Daten abspeichern</li>
-	<li>Daten laden</li>
-	<li>In Tabelle anzeigen</li>
-	<li>Sortier- und Filterbar</li>
+	<li>
+		Exportieren Sie die gewünschte Abwesenheitsliste bei IServ
+		(https://steinbart-gym.eu/iserv/absence/)
+	</li>
+	<li>Speichern Sie die Liste unter einem auffindbaren Namen auf Ihrem Gerät.</li>
+	<li>
+		Drücken Sie auf auf die Schaltfläche unten und wählen Sie die Abwesenheitsdatei (*.csv) von
+		Ihrem Gerät aus.
+	</li>
 </ol>
+
+<input type="file" accept=".csv" onchange={handleFileUpload} />
 
 {#if entries.length > 0}
 	<h2>Einträge</h2>
 	<table>
 		<thead>
 			<tr>
-				<th onclick={handleSortName}>Name</th>
+				<th onclick={handleSortVorname}>Vorname</th>
+				<th onclick={handleSortNachname}>Nachname</th>
 				<th onclick={handleSortEntschuldigt}>Entschuldigt</th>
 				<th onclick={handleSortUnentschuldigt}>Unentschuldigt</th>
 				<th onclick={handleSortGesamt}>Gesamt</th>
@@ -134,7 +150,8 @@
 		<tbody>
 			{#each entries as entry}
 				<tr>
-					<td>{entry.name}</td>
+					<td>{entry.vorname}</td>
+					<td>{entry.nachname}</td>
 					<td>{entry.entschuldigt}</td>
 					<td>{entry.unentschuldigt}</td>
 					<td>{entry.entschuldigt + entry.unentschuldigt}</td>
@@ -144,4 +161,8 @@
 	</table>
 {/if}
 
-<input type="file" accept=".csv" onchange={handleFileUpload} />
+<style>
+	th {
+		cursor: pointer;
+	}
+</style>
