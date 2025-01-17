@@ -89,7 +89,7 @@
 						};
 						entries.push(absence);
 					});
-					handleSortVorname();
+					handleSortNachname();
 				},
 				error: (error) => {
 					console.log(error.message);
