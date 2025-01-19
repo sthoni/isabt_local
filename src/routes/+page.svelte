@@ -1,95 +1,28 @@
 <script lang="ts">
+	import * as Table from '$lib/components/ui/table/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import TypographyH1 from '$lib/components/TypographyH1.svelte';
+	import TypographyP from '$lib/components/TypographyP.svelte';
+	import TypographyList from '$lib/components/TypographyList.svelte';
+	import { ArrowDown10, ArrowDownAZ } from 'lucide-svelte';
+	import { parseCsv, type Absence } from '$lib/utils';
 	import Papa from 'papaparse';
+	import TypographyH2 from '$lib/components/TypographyH2.svelte';
 
 	let entries: Absence[] = $state([]);
 
-	interface CsvRecord {
-		Abwesenheitszeit: string;
-		'Aktualisiert am': string;
-		Dauer: string;
-		'Klasse/Information': string;
-		Name: string;
-		Status: string;
-	}
-
-	interface CsvRecordTransformed {
-		Dauer: number;
-		Name: string;
-		Status: string;
-	}
-
-	interface Absence {
-		vorname: string;
-		nachname: string;
-		entschuldigt: number;
-		unentschuldigt: number;
-	}
-
 	function handleFileUpload(event: Event) {
 		const upload_element = event.target as HTMLInputElement;
-		let entries_transformed: CsvRecordTransformed[] = [];
 
 		if (upload_element && upload_element.files) {
 			const file = upload_element.files[0];
-			let csv: CsvRecord[];
 			Papa.parse(file, {
 				header: true,
 				complete: (result) => {
-					entries = [];
-					csv = result.data as CsvRecord[];
-					csv.forEach((entry) => {
-						if (entry.Dauer) {
-							const dauerString = entry.Dauer.split(' ');
-							if (dauerString[1] == 'Stunden') {
-								const hours_string = dauerString[0].split(':');
-								const hours_in_minutes = Number(hours_string[0]) * 60;
-								const minutes_in_minutes = Number(hours_string[1]);
-								const dauer_in_school_hours = Math.floor(
-									(hours_in_minutes + minutes_in_minutes) / 67
-								);
-								const entry_transformed: CsvRecordTransformed = {
-									Dauer: dauer_in_school_hours,
-									Name: entry.Name,
-									Status: entry.Status
-								};
-								entries_transformed.push(entry_transformed);
-							} else {
-								const days = Number(dauerString[0]);
-								const entry_transformed: CsvRecordTransformed = {
-									Dauer: days * 4,
-									Name: entry.Name,
-									Status: entry.Status
-								};
-								entries_transformed.push(entry_transformed);
-							}
-						}
-					});
-					const names = new Set(
-						entries_transformed.map((entry) => {
-							return entry.Name;
-						})
-					);
-					names.forEach((name) => {
-						const entschuldigt: number = entries_transformed
-							.filter((entry) => entry.Name == name && entry.Status == 'entschuldigt')
-							.map((e) => e.Dauer)
-							.reduce((acc, current) => acc + current, 0);
-						const unentschuldigt: number = entries_transformed
-							.filter((entry) => entry.Name == name && entry.Status == 'unentschuldigt')
-							.map((e) => e.Dauer)
-							.reduce((acc, current) => acc + current, 0);
-						const name_splitted = name.split(' ');
-						const vorname = name_splitted.slice(0, -1).join(' ');
-						const nachname = name_splitted.slice(-1).toString();
-						const absence: Absence = {
-							vorname,
-							nachname,
-							entschuldigt,
-							unentschuldigt
-						};
-						entries.push(absence);
-					});
-					handleSortNachname();
+					entries = parseCsv(result);
+					localStorage.setItem(`Upload am ${Date.now().toString()}`, JSON.stringify(entries));
+					handleSortVorname();
 				},
 				error: (error) => {
 					console.log(error.message);
@@ -119,50 +52,75 @@
 	}
 </script>
 
-<h1>ISABT: IServ-Abwesenheitstool</h1>
-<p>Willkommen beim Upload-Tool für die Abwesenheitslisten. Befolgen Sie bitte folgende Schritte:</p>
-<ol>
-	<li>
-		Exportieren Sie die gewünschte Abwesenheitsliste bei IServ
-		(https://steinbart-gym.eu/iserv/absence/)
-	</li>
-	<li>Speichern Sie die Liste unter einem auffindbaren Namen auf Ihrem Gerät.</li>
-	<li>
-		Drücken Sie auf auf die Schaltfläche unten und wählen Sie die Abwesenheitsdatei (*.csv) von
-		Ihrem Gerät aus.
-	</li>
-</ol>
+<div>
+	<TypographyH1>IServ-Abwesenheitstool</TypographyH1>
+	<TypographyP
+		>Mit diesem kleinen Tool können Sie Abwesenheitslisten aus IServ schnell zusammenfassen. Damit
+		erhalten Sie einen einfachen Überblick über die Fehlzeiten Ihrer Schülerinnen und Schüler.</TypographyP
+	>
+	<TypographyP>Es gilt wie bei der Lottoziehung: <b>Alle Angaben ohne Gewähr</b>.</TypographyP>
+</div>
 
-<input type="file" accept=".csv" onchange={handleFileUpload} />
+<div class="mt-12">
+	<TypographyH2>CSV-Upload</TypographyH2>
+	<TypographyList>
+		<li>
+			Exportieren Sie die gewünschte Abwesenheitsliste bei <a
+				href="https://steinbart-gym.eu/iserv/absence/"
+				class="underline">IServ</a
+			>. Das Schuljahr begann am Mittwoch, den 21.08.2024.
+		</li>
+		<li>Speichern Sie die Liste unter einem auffindbaren Namen auf Ihrem Gerät.</li>
+		<li>
+			Drücken Sie auf auf die Schaltfläche unten und wählen Sie die Abwesenheitsdatei (*.csv) von
+			Ihrem Gerät aus. Wenn alles in Ordnung ist, erscheint sofort eine Tabelle mit den Schülerinnen
+			und Schülern.
+		</li>
+		<li>
+			Klicken Sie in der Tabelle auf die Überschriften der Spalten, um nach der Größe zu sortieren.
+		</li>
+	</TypographyList>
+	<div class="grid w-full max-w-sm items-center gap-1.5">
+		<Label class="text-2xl font-bold" for="abwesenheitscsv">CSV-Datei hochladen</Label>
+		<Input onchange={handleFileUpload} id="abwesenheitscsv" type="file" accept=".csv" />
+	</div>
+</div>
 
-{#if entries.length > 0}
-	<h2>Einträge</h2>
-	<table>
-		<thead>
-			<tr>
-				<th onclick={handleSortVorname}>Vorname</th>
-				<th onclick={handleSortNachname}>Nachname</th>
-				<th onclick={handleSortEntschuldigt}>Entschuldigt</th>
-				<th onclick={handleSortUnentschuldigt}>Unentschuldigt</th>
-				<th onclick={handleSortGesamt}>Gesamt</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each entries as entry}
-				<tr>
-					<td>{entry.vorname}</td>
-					<td>{entry.nachname}</td>
-					<td>{entry.entschuldigt}</td>
-					<td>{entry.unentschuldigt}</td>
-					<td>{entry.entschuldigt + entry.unentschuldigt}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-{/if}
-
-<style>
-	th {
-		cursor: pointer;
-	}
-</style>
+<div class="mt-12">
+	{#if entries.length > 0}
+		<TypographyH2>Einträge</TypographyH2>
+		<Table.Root>
+			<Table.Caption>Liste mit Fehlzeiten</Table.Caption>
+			<Table.Header>
+				<Table.Row>
+					<Table.Head onclick={handleSortVorname} class="cursor-pointer hover:bg-slate-200"
+						><ArrowDownAZ /> Vorname</Table.Head
+					>
+					<Table.Head onclick={handleSortNachname} class="cursor-pointer hover:bg-slate-200"
+						><ArrowDownAZ /> Nachname</Table.Head
+					>
+					<Table.Head onclick={handleSortEntschuldigt} class="cursor-pointer hover:bg-slate-200"
+						><ArrowDown10 /> Entschuldigt</Table.Head
+					>
+					<Table.Head onclick={handleSortUnentschuldigt} class="cursor-pointer hover:bg-slate-200"
+						><ArrowDown10 /> Unentschuldigt</Table.Head
+					>
+					<Table.Head onclick={handleSortGesamt} class="cursor-pointer hover:bg-slate-200"
+						><ArrowDown10 /> Gesamt</Table.Head
+					>
+				</Table.Row>
+			</Table.Header>
+			<Table.Body>
+				{#each entries as entry}
+					<Table.Row>
+						<Table.Cell>{entry.vorname}</Table.Cell>
+						<Table.Cell>{entry.nachname}</Table.Cell>
+						<Table.Cell>{entry.entschuldigt}</Table.Cell>
+						<Table.Cell>{entry.unentschuldigt}</Table.Cell>
+						<Table.Cell>{entry.entschuldigt + entry.unentschuldigt}</Table.Cell>
+					</Table.Row>
+				{/each}
+			</Table.Body>
+		</Table.Root>
+	{/if}
+</div>
