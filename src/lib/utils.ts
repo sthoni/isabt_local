@@ -13,6 +13,11 @@ export type Absence = {
 	unentschuldigt: number;
 }
 
+export type Upload = {
+	absences: Absence[];
+	date: Date;
+}
+
 export type CsvRecord = {
 	Abwesenheitszeit: string;
 	'Aktualisiert am': string;

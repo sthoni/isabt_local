@@ -6,11 +6,23 @@
 	import TypographyP from '$lib/components/TypographyP.svelte';
 	import TypographyList from '$lib/components/TypographyList.svelte';
 	import { ArrowDown10, ArrowDownAZ } from 'lucide-svelte';
-	import { parseCsv, type Absence } from '$lib/utils';
+	import { parseCsv, type Absence, type Upload } from '$lib/utils';
 	import Papa from 'papaparse';
 	import TypographyH2 from '$lib/components/TypographyH2.svelte';
 
 	let entries: Absence[] = $state([]);
+	let uploads: Upload[] = $state([]);
+
+	$effect(() => {
+		const locale_storage = localStorage.getItem('uploads');
+		if (locale_storage) {
+			uploads = JSON.parse(locale_storage);
+		}
+	});
+
+	$effect(() => {
+		localStorage.setItem('uploads', JSON.stringify(uploads));
+	});
 
 	function handleFileUpload(event: Event) {
 		const upload_element = event.target as HTMLInputElement;
@@ -21,6 +33,7 @@
 				header: true,
 				complete: (result) => {
 					entries = parseCsv(result);
+					uploads.push({ absences: entries, date: new Date() });
 					handleSortVorname();
 				},
 				error: (error) => {
@@ -49,16 +62,38 @@
 	function handleSortGesamt() {
 		entries.sort((a, b) => b.entschuldigt + b.unentschuldigt - (a.entschuldigt + a.unentschuldigt));
 	}
+
+	function loadUpload(upload: Upload) {
+		if (upload.absences) {
+			entries = upload.absences;
+		}
+	}
 </script>
 
 <div>
 	<TypographyH1>IServ-Abwesenheitstool</TypographyH1>
-	<TypographyP
-		>Mit diesem kleinen Tool können Sie Abwesenheitslisten aus IServ schnell zusammenfassen. Damit
-		erhalten Sie einen einfachen Überblick über die Fehlzeiten Ihrer Schülerinnen und Schüler.</TypographyP
-	>
-	<TypographyP>Es gilt wie bei der Lottoziehung: <b>Alle Angaben ohne Gewähr</b>.</TypographyP>
+	<TypographyP>
+		Mit diesem kleinen Tool können Sie Abwesenheitslisten aus IServ schnell zusammenfassen. Damit
+		erhalten Sie einen einfachen Überblick über die Fehlzeiten Ihrer Schülerinnen und Schüler.
+	</TypographyP>
+	<TypographyP>
+		Es gilt wie bei der Lottoziehung: <b>Alle Angaben ohne Gewähr</b>.
+	</TypographyP>
 </div>
+
+{#if uploads.length > 0}
+	<div class="mt-12">
+		<TypographyH2>Bisherige Uploads</TypographyH2>
+		<TypographyList>
+			{#each uploads as upload}
+				<li>
+					Upload: {upload.date.toLocaleString()}
+					<button onclick={() => loadUpload(upload)}>Laden</button>
+				</li>
+			{/each}
+		</TypographyList>
+	</div>
+{/if}
 
 <div class="mt-12">
 	<TypographyH2>CSV-Upload</TypographyH2>
@@ -85,8 +120,8 @@
 	</div>
 </div>
 
-<div class="mt-12">
-	{#if entries.length > 0}
+{#if entries.length > 0}
+	<div class="mt-12">
 		<TypographyH2>Einträge</TypographyH2>
 		<Table.Root>
 			<Table.Caption>Liste mit Fehlzeiten</Table.Caption>
@@ -121,5 +156,5 @@
 				{/each}
 			</Table.Body>
 		</Table.Root>
-	{/if}
-</div>
+	</div>
+{/if}
