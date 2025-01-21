@@ -21,7 +21,6 @@
 				header: true,
 				complete: (result) => {
 					entries = parseCsv(result);
-					localStorage.setItem(`Upload am ${Date.now().toString()}`, JSON.stringify(entries));
 					handleSortVorname();
 				},
 				error: (error) => {
@@ -73,8 +72,8 @@
 		<li>Speichern Sie die Liste unter einem auffindbaren Namen auf Ihrem Gerät.</li>
 		<li>
 			Drücken Sie auf auf die Schaltfläche unten und wählen Sie die Abwesenheitsdatei (*.csv) von
-			Ihrem Gerät aus. Wenn alles in Ordnung ist, erscheint sofort eine Tabelle mit den Schülerinnen
-			und Schülern.
+			Ihrem Gerät aus. Wenn alles in Ordnung ist, erscheint unten sofort eine Tabelle mit den
+			Schülerinnen und Schülern.
 		</li>
 		<li>
 			Klicken Sie in der Tabelle auf die Überschriften der Spalten, um nach der Größe zu sortieren.

@@ -61,7 +61,6 @@ export function parseCsv(result: Papa.ParseResult<unknown>) {
 		};
 		entries.push(absence);
 	});
-	console.log(entries)
 	return entries;
 }
 
