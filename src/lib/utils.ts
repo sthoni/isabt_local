@@ -66,6 +66,7 @@ export function parseCsv(result: Papa.ParseResult<unknown>) {
 		};
 		entries.push(absence);
 	});
+	entries.sort((a, b) => a.vorname.localeCompare(b.vorname));
 	return entries;
 }
 

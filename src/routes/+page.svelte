@@ -2,6 +2,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import { Button } from "$lib/components/ui/button";
 	import TypographyH1 from '$lib/components/TypographyH1.svelte';
 	import TypographyP from '$lib/components/TypographyP.svelte';
 	import TypographyList from '$lib/components/TypographyList.svelte';
@@ -24,6 +25,12 @@
 		localStorage.setItem('uploads', JSON.stringify(uploads));
 	});
 
+	$effect(() => {
+		if (entries) {
+			document.querySelector("table")?.scrollIntoView()
+		}
+	})
+
 	function handleFileUpload(event: Event) {
 		const upload_element = event.target as HTMLInputElement;
 
@@ -33,8 +40,7 @@
 				header: true,
 				complete: (result) => {
 					entries = parseCsv(result);
-					uploads.push({ absences: entries, date: new Date() });
-					handleSortVorname();
+					uploads.unshift({ absences: entries, date: new Date() });
 				},
 				error: (error) => {
 					console.log(error.message);
@@ -68,6 +74,10 @@
 			entries = upload.absences;
 		}
 	}
+
+	function deleteUploads() {
+		uploads =  []
+	}
 </script>
 
 <div>
@@ -81,22 +91,10 @@
 	</TypographyP>
 </div>
 
-{#if uploads.length > 0}
-	<div class="mt-12">
-		<TypographyH2>Bisherige Uploads</TypographyH2>
-		<TypographyList>
-			{#each uploads as upload}
-				<li>
-					Upload: {upload.date.toLocaleString()}
-					<button onclick={() => loadUpload(upload)}>Laden</button>
-				</li>
-			{/each}
-		</TypographyList>
-	</div>
-{/if}
+
 
 <div class="mt-12">
-	<TypographyH2>CSV-Upload</TypographyH2>
+	<TypographyH2>Neuer CSV-Upload</TypographyH2>
 	<TypographyList>
 		<li>
 			Exportieren Sie die gewünschte Abwesenheitsliste bei <a
@@ -156,5 +154,20 @@
 				{/each}
 			</Table.Body>
 		</Table.Root>
+	</div>
+{/if}
+
+{#if uploads.length > 0}
+	<div class="mt-12">
+		<TypographyH2>Bisherige Uploads</TypographyH2>
+		<TypographyList>
+			{#each uploads as upload}
+				<li>
+					Hochgeladen am {new Date(upload.date).toLocaleString()}
+					<Button class="ml-4" variant="outline" onclick={() => loadUpload(upload)}>Laden</Button>
+				</li>
+			{/each}
+		</TypographyList>
+		<Button onclick={deleteUploads}>Alles löschen</Button>
 	</div>
 {/if}
